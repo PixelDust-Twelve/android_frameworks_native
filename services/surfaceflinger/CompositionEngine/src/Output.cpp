@@ -22,7 +22,9 @@
 #include <compositionengine/LayerFE.h>
 #include <compositionengine/LayerFECompositionState.h>
 #include <compositionengine/RenderSurface.h>
+#ifdef QCOM_UM_FAMILY
 #include <compositionengine/UdfpsExtension.h>
+#endif
 #include <compositionengine/impl/Output.h>
 #include <compositionengine/impl/OutputCompositionState.h>
 #include <compositionengine/impl/OutputLayer.h>
@@ -776,10 +778,13 @@ void Output::writeCompositionState(const compositionengine::CompositionRefreshAr
 
 compositionengine::OutputLayer* Output::findLayerRequestingBackgroundComposition() const {
     compositionengine::OutputLayer* layerRequestingBgComposition = nullptr;
+#ifdef QCOM_UM_FAMILY
     for (size_t i = 0; i < getOutputLayerCount(); i++) {
         compositionengine::OutputLayer* layer = getOutputLayerOrderedByZByIndex(i);
         compositionengine::OutputLayer* nextLayer = getOutputLayerOrderedByZByIndex(i + 1);
-
+#else
+    for (auto* layer : getOutputLayersOrderedByZ()) {
+#endif
         auto* compState = layer->getLayerFE().getCompositionState();
 
         // If any layer has a sideband stream, we will disable blurs. In that case, we don't
@@ -791,6 +796,7 @@ compositionengine::OutputLayer* Output::findLayerRequestingBackgroundComposition
             layerRequestingBgComposition = layer;
         }
 
+#ifdef QCOM_UM_FAMILY
         // If the next layer is the Udfps touched layer, enable client composition for it
         // because that somehow leads to the Udfps touched layer getting device composition
         // consistently.
@@ -799,6 +805,7 @@ compositionengine::OutputLayer* Output::findLayerRequestingBackgroundComposition
             layerRequestingBgComposition = layer;
             break;
         }
+#endif
     }
     return layerRequestingBgComposition;
 }
